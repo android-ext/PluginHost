@@ -3,6 +3,7 @@ package com.lianjia.devext.plugindev;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -139,28 +140,38 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         String packageName = map.get("packageName");
 
+
         try {
-            PathClassLoader classLoader = new PathClassLoader(pluginContext.getPackageResourcePath(),
-                    PathClassLoader.getSystemClassLoader());
-            // 获取资源类
-            Class<?> forName = Class.forName(packageName + ".R$mipmap", true, classLoader);
-            Field[] fields = forName.getFields();
-            for (Field field :fields) {
-                // 找到想要的资源 (所有的插件的背景图片的名称: icon_main_bg) --- 协议: main_bg
-                String name = field.getName();
-                if (name.equals("icon_main_bg")) {
-                    return field.getInt(R.mipmap.class);
-                }
-            }
-        } catch (Exception e) {
+            PackageManager pm = getPackageManager();
+            Resources res = pm.getResourcesForApplication(packageName);
+            int resId = res.getIdentifier("icon_main_bg","mipmap", packageName); // 根据名字取id
+            return resId;
+        } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
+
+//        try {
+//            PathClassLoader classLoader = new PathClassLoader(pluginContext.getPackageResourcePath(),
+//                    PathClassLoader.getSystemClassLoader());
+//            // 获取资源类
+//            Class<?> forName = Class.forName(packageName + ".R$mipmap", true, classLoader);
+//            Field[] fields = forName.getFields();
+//            for (Field field :fields) {
+//                // 找到想要的资源 (所有的插件的背景图片的名称: icon_main_bg) --- 协议: main_bg
+//                String name = field.getName();
+//                if (name.equals("icon_main_bg")) {
+//                    return field.getInt(R.mipmap.class);
+//                }
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
         return 0;
     }
 
     private Context findPluginContext(Map<String, String> map) {
         try {
-            return createPackageContext(map.get("packageName"), Context.CONTEXT_IGNORE_SECURITY);
+            return createPackageContext(map.get("packageName"), Context.CONTEXT_INCLUDE_CODE | Context.CONTEXT_IGNORE_SECURITY);
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
